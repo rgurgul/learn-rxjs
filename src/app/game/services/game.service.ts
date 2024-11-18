@@ -18,7 +18,7 @@ const host = window.location.host;
 export class Api {
   // WebSocket Game end-points
   static GAME_PLAY = `ws:/${host}/play`;
-  static GAME_GET_USER = 'https://demo-game.debugger.pl/get-user';
+  static GAME_GET_USER = 'get-user';
   static GAME_REGISTER_USER = 'register-user';
 }
 

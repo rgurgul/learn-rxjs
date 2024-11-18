@@ -62,8 +62,8 @@
               "buildTarget": "game:build:production"
             },
             "development": {
-              "buildTarget": "game:build:development"
-              
+              "buildTarget": "game:build:development",
+              "proxyConfig": "proxy.config.json"
             }
           },
           "defaultConfiguration": "development"
