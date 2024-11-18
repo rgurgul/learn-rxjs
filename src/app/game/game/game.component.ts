@@ -15,6 +15,7 @@ import {
   map,
   retry,
   switchMap,
+  tap,
   throttleTime,
 } from 'rxjs/operators';
 import { GameService, Message } from '../services/game.service';
@@ -24,14 +25,14 @@ import { GameService, Message } from '../services/game.service';
   template: `
     <h3>WebSocket Multiplayer Game</h3>
 
-    <ng-template #playerTpl let-data>
+    <ng-template #playerTpl let-x>
       <div
         class="el"
-        [id]="data.username"
-        [ngStyle]="{ 'left.px': data.clientX, 'top.px': data.clientY }"
+        [id]="x.username"
+        [ngStyle]="{ 'left.px': x.clientX, 'top.px': x.clientY }"
       >
-        {{ data.username }}
-        <div>{{ data.score }}</div>
+        {{ x.username }}
+        <div>{{ x.score }}</div>
       </div>
     </ng-template>
 
@@ -49,18 +50,37 @@ export class GameComponent implements AfterViewInit {
   container = inject(ViewContainerRef);
 
   ngAfterViewInit(): void {
-    
+    this.gameService.getUser().subscribe(({ warning }) => {
+      warning ? this.register() : this.init();
+    });
   }
 
   updatePlayer(msg: Message) {
-    
+    const playerExist = this.players.get(msg.username as string);
+    if(playerExist){
+      playerExist.context.$implicit = msg;
+    } else {
+      const player = this.container.createEmbeddedView(this.playerTpl()!, {$implicit:msg});
+      this.players.set(msg.username as string, player);
+    }
   }
 
   init() {
     this.gameService.messanger.subscribe((msg) => this.updatePlayer(msg));
+    fromEvent<any>(this.areaEl()!.nativeElement, 'mousemove')
+    .subscribe(({clientX, clientY}:MouseEvent)=>{
+      this.gameService.messanger.next({clientX, clientY})
+    })
   }
 
   register() {
-    
+    of('your name 3-6 znaków')
+      .pipe(
+        map((msg) => prompt(msg)),
+        tap(console.log),
+        switchMap((username) => this.gameService.register(username)),
+        retry(3)
+      )
+      .subscribe();
   }
 }

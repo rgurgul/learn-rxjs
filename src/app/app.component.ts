@@ -2,34 +2,35 @@ import { Component, inject } from '@angular/core';
 import { GameComponent } from './game/game/game.component';
 import { StopWatchComponent } from './game/watch/stop-watch.component';
 import { HttpClient } from '@angular/common/http';
-import {
-  BehaviorSubject,
-  catchError,
-  count,
-  filter,
-  from,
-  fromEvent,
-  groupBy,
-  interval,
-  map,
-  merge,
-  mergeMap,
-  Observable,
-  of,
-  reduce,
-  ReplaySubject,
-  scan,
-  skip,
-  Subject,
-  take,
-  takeUntil,
-  takeWhile,
-  tap,
-  throttleTime,
-  timeout,
-  toArray,
-} from 'rxjs';
+
 import { ajax } from 'rxjs/ajax';
+import {
+  of,
+  concatMap,
+  delay,
+  Observable,
+  Observer,
+  share,
+  merge,
+  fromEvent,
+  map,
+  take,
+  groupBy,
+  mergeMap,
+  toArray,
+  reduce,
+  interval,
+  filter,
+  throttleTime,
+  catchError,
+  takeWhile,
+  Subject,
+  ReplaySubject,
+  BehaviorSubject,
+  from,
+  exhaustMap,
+  switchMap,
+} from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -52,24 +53,57 @@ export class AppComponent {
     //this.errorHandle();
     //this.filteringOperators();
     //this.transformationOperators();
-     this.combinationOperators();
-    // this.hotvscold();
+    //this.combinationOperators();
+    //this.hotvscold();
     // this.multicastOperators();
-    // this.customOperators();
-    // this.higherOrder()
+    //this.customOperators();
+    //this.higherOrder();
+  }
+  higherOrder() {
+    const click$ = fromEvent(document, 'click');
+    const req$ = ajax('https://api.debugger.pl/utils/big-deal/500000');
+
+    const observable$ = click$.pipe(
+      //mergeMap(() => req$),
+      //switchMap(() => req$),
+      //concatMap(() => req$),
+      exhaustMap(() => req$)
+    );
+
+    observable$.subscribe(console.log);
+  }
+  customOperators() {
+    of(111).pipe(this.double).subscribe(this.myObserver);
+  }
+  double(val$: Observable<number>): Observable<any> {
+    return new Observable((obs: Observer<any>) => {
+      val$.subscribe({
+        next: (val) => {
+          obs.next(2 * val);
+        },
+      });
+    });
+  }
+  hotvscold() {
+    const req$ = this.http.get(this.url).pipe(share());
+    req$.subscribe();
+    req$.subscribe();
+    req$.subscribe();
   }
   combinationOperators() {
-    merge<any>(
-      fromEvent(document, 'click'),
-      fromEvent(document, 'mousemove'),
-    )
-    .pipe(
-      map(({pageX, pageY, type}:MouseEvent)=>({pageX, pageY, type})),
-      take(100),
-      groupBy(({type})=>type),
-      mergeMap((obs$)=>obs$.pipe(toArray(), map((val)=>({[obs$.key]:val})))),
-    )
-    .subscribe(this.myObserver)
+    merge<any>(fromEvent(document, 'click'), fromEvent(document, 'mousemove'))
+      .pipe(
+        map(({ pageX, pageY, type }: MouseEvent) => ({ pageX, pageY, type })),
+        take(100),
+        groupBy(({ type }) => type),
+        mergeMap((obs$) =>
+          obs$.pipe(
+            toArray(),
+            map((val) => ({ [obs$.key]: val }))
+          )
+        )
+      )
+      .subscribe(this.myObserver);
   }
   transformationOperators() {
     fromEvent(document, 'mousemove')
@@ -81,8 +115,7 @@ export class AppComponent {
             return { ...acc, count: ++acc.count, val };
           },
           { count: 0 }
-        ),
-        
+        )
       )
       .subscribe(this.myObserver);
   }
